@@ -1,3 +1,4 @@
+/* eslint-disable dot-notation */
 import { expect, use } from 'chai';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
@@ -447,6 +448,55 @@ describe('AudioStreamController', function () {
         },
       );
       expect(audioStreamController.tick).to.have.been.calledOnce;
+    });
+  });
+
+  describe('startLoad', function () {
+    beforeEach(function () {
+      audioStreamController.levels = tracks;
+      sandbox.stub(audioStreamController, 'tick');
+      sandbox.stub(audioStreamController, 'setInterval');
+      sandbox.stub(audioStreamController, 'stopLoad');
+    });
+
+    it('resumes at lastCurrentTime when startPosition is -1 and initPTS has entries', function () {
+      audioStreamController['lastCurrentTime'] = 42.5;
+      audioStreamController['initPTS'].set(0, {
+        baseTime: 100,
+        timescale: 1000,
+        trackId: 7,
+      });
+
+      audioStreamController.startLoad(-1);
+
+      expect(audioStreamController['startPosition']).to.equal(42.5);
+      expect(audioStreamController['nextLoadPosition']).to.equal(42.5);
+      expect(audioStreamController['lastCurrentTime']).to.equal(42.5);
+    });
+
+    it('keeps -1 when startPosition is -1 and initPTS is empty', function () {
+      audioStreamController['lastCurrentTime'] = 42.5;
+
+      audioStreamController.startLoad(-1);
+
+      expect(audioStreamController['startPosition']).to.equal(-1);
+      expect(audioStreamController['nextLoadPosition']).to.equal(-1);
+      expect(audioStreamController['lastCurrentTime']).to.equal(-1);
+    });
+
+    it('uses the provided startPosition even when lastCurrentTime and initPTS are set', function () {
+      audioStreamController['lastCurrentTime'] = 42.5;
+      audioStreamController['initPTS'].set(1, {
+        baseTime: 50,
+        timescale: 90000,
+        trackId: 3,
+      });
+
+      audioStreamController.startLoad(3.25);
+
+      expect(audioStreamController['startPosition']).to.equal(3.25);
+      expect(audioStreamController['nextLoadPosition']).to.equal(3.25);
+      expect(audioStreamController['lastCurrentTime']).to.equal(3.25);
     });
   });
 

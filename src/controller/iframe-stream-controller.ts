@@ -11,7 +11,7 @@ import type { Fragment, MediaFragment, Part } from '../loader/fragment';
 import type { LevelDetails } from '../loader/level-details';
 import type { FragLoadedData } from '../types/events';
 import type { Level } from '../types/level';
-import type { TimestampOffset } from '../utils/timescale-conversion';
+import type { TimestampOffsets } from '../utils/timestamp-offsets';
 
 export type LoadMediaAtOptions = { seekOnAppend: boolean };
 
@@ -24,8 +24,8 @@ export class IFrameStreamController extends StreamController {
   protected cacheFragmentData: boolean = true;
   initDetails?: LevelDetails | null;
 
-  setInitPts(initPTS: TimestampOffset[]) {
-    this.initPTS = initPTS.slice();
+  setInitPts(initPTS: TimestampOffsets) {
+    this.initPTS = initPTS.clone();
   }
 
   loadMediaAt(time: number, options: LoadMediaAtOptions) {

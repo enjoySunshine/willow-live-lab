@@ -7,6 +7,7 @@ import { Events } from '../events';
 import { type LoaderStats, PlaylistLevelType } from '../types/loader';
 import { Logger } from '../utils/logger';
 import { getVideoPreference } from '../utils/rendition-helper';
+import { TimestampOffsets } from '../utils/timestamp-offsets';
 import type { HlsConfig } from '../config';
 import type Hls from '../hls';
 import type { LevelDetails } from '../loader/level-details';
@@ -17,7 +18,6 @@ import type {
   ManifestLoadedData,
 } from '../types/events';
 import type { Level, LevelParsed, VariableMap } from '../types/level';
-import type { TimestampOffset } from '../utils/timescale-conversion';
 
 const PRELOAD_IFRAME_PLAYLISTS_AFTER_BUFFER_SECONDS = 10;
 const IMAGE_IFRAME_ATTACH_ERROR =
@@ -74,7 +74,7 @@ export class IFrameController extends Logger {
   private stats?: LoaderStats;
   private variableList: VariableMap | null = null;
 
-  private initPTS: TimestampOffset[] = [];
+  private initPTS: TimestampOffsets = new TimestampOffsets();
 
   private iframeInstances: (HlsIFramesOnly | HlsImageIFramesOnly)[];
   private instanceCounter: number = 0;
@@ -115,7 +115,7 @@ export class IFrameController extends Logger {
   private clearAsset() {
     this.stats = undefined;
     this.variableList = null;
-    this.initPTS = [];
+    this.initPTS.clear();
     this.iframeInstances.forEach((instance) => instance.destroy());
     this.iframeInstances.length = 0;
   }
@@ -305,7 +305,7 @@ function createHlsIFramesOnly(Base: Constructor<Hls>) {
     constructor(
       playerConfig: Partial<HlsConfig>,
       url: string,
-      initPTS: TimestampOffset[],
+      initPTS: TimestampOffsets,
       latestLevelDetails: LevelDetails | null,
     ) {
       // Video I-Frame stream-controller load segments before seeking to them to render frames in desired order
@@ -351,7 +351,7 @@ function createHlsImageIFramesOnly(Base: typeof HlsIFramesOnlyClass) {
     constructor(
       playerConfig: Partial<HlsConfig>,
       url: string,
-      initPTS: TimestampOffset[],
+      initPTS: TimestampOffsets,
       latestLevelDetails: LevelDetails | null,
     ) {
       // Image I-Frame stream-controller does not use media element

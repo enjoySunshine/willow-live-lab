@@ -57,11 +57,11 @@ describe('TimelineController', function () {
       const processed = sinon.spy();
       hls.on(Events.SUBTITLE_FRAG_PROCESSED, processed);
       timelineController.tracks = [{ textCodec: 'wvtt' }];
-      timelineController.initPTS[0] = {
+      timelineController.initPTS.set(0, {
         baseTime: 0,
         timescale: 90_000,
         trackId: -1,
-      };
+      });
       const frag = subtitleFragment(true);
 
       timelineController.onFragLoaded(Events.FRAG_LOADED, {

@@ -930,7 +930,7 @@ describe('StreamController', function () {
 
       it('should set startPosition to lastCurrentTime if unset and lastCurrentTime > 0 after parsing segments', function () {
         streamController['lastCurrentTime'] = 5;
-        streamController['initPTS'].push({
+        streamController['initPTS'].set(0, {
           baseTime: 0,
           timescale: 1,
           trackId: 0,
@@ -948,6 +948,31 @@ describe('StreamController', function () {
         expect(streamController['nextLoadPosition']).to.equal(123);
         expect(streamController['startPosition']).to.equal(123);
         expect(streamController['lastCurrentTime']).to.equal(123);
+      });
+
+      it('should keep an explicit startPosition over lastCurrentTime when initPTS has entries', function () {
+        streamController['lastCurrentTime'] = 42.5;
+        streamController['initPTS'].set(0, {
+          baseTime: 100,
+          timescale: 1000,
+          trackId: 7,
+        });
+
+        streamController.startLoad(3.25);
+        assertStreamControllerStarted(streamController);
+        expect(streamController['nextLoadPosition']).to.equal(3.25);
+        expect(streamController['startPosition']).to.equal(3.25);
+        expect(streamController['lastCurrentTime']).to.equal(3.25);
+      });
+
+      it('should not resume at lastCurrentTime when initPTS is empty', function () {
+        streamController['lastCurrentTime'] = 42.5;
+
+        streamController.startLoad(-1);
+        assertStreamControllerStarted(streamController);
+        expect(streamController['startPosition']).to.equal(-1);
+        expect(streamController['nextLoadPosition']).to.equal(-1);
+        expect(streamController['lastCurrentTime']).to.equal(-1);
       });
 
       it('should set startPosition to -1 when passed as an argument', function () {
@@ -995,6 +1020,49 @@ describe('StreamController', function () {
         streamController.startLoad(-1);
         expect(streamController['level']).to.equal(hls.nextAutoLevel);
         expect(streamController['bitrateTest']).to.be.false;
+      });
+    });
+  });
+
+  describe('initPTS discontinuity table', function () {
+    it('prunes finished discontinuities on playlist refresh', function () {
+      const initPTS = streamController['initPTS'];
+      initPTS.set(1999990, {
+        baseTime: 1,
+        timescale: 90000,
+        trackId: 1,
+      });
+      initPTS.set(2000000, {
+        baseTime: 900000,
+        timescale: 90000,
+        trackId: 2,
+      });
+
+      const details = new LevelDetails('');
+      details.live = false;
+      details.startCC = 2000000;
+      const levelInfo = new Level({
+        name: '',
+        url: '',
+        attrs,
+        bitrate: 500000,
+      });
+      streamController['levels'] = [levelInfo];
+      streamController['onLevelLoaded'](Events.LEVEL_LOADED, {
+        details,
+        id: 0,
+        level: 0,
+        levelInfo,
+        networkDetails: new Response('ok'),
+        stats: new LoadStats(),
+        deliveryDirectives: null,
+      });
+
+      expect(initPTS.get(1999990)).to.equal(undefined);
+      expect(initPTS.get(2000000)).to.deep.equal({
+        baseTime: 900000,
+        timescale: 90000,
+        trackId: 2,
       });
     });
   });

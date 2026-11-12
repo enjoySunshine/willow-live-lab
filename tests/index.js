@@ -60,6 +60,7 @@ import './unit/utils/output-filter';
 import './unit/utils/rendition-helper';
 import './unit/utils/safe-json-stringify';
 import './unit/utils/texttrack-utils';
+import './unit/utils/timestamp-offsets';
 import './unit/utils/url-tools';
 import './unit/utils/vttparser';
 import './unit/utils/utf8';

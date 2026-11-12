@@ -278,7 +278,7 @@ class AudioStreamController
         if (waitingData) {
           const { frag, part, cache, complete } = waitingData;
           const mainAnchor = this.mainAnchor;
-          if (this.initPTS[frag.cc] !== undefined) {
+          if (this.initPTS.get(frag.cc) !== undefined) {
             this.waitingData = null;
             this.state = State.FRAG_LOADING;
             const payload = cache.flush().buffer;
@@ -654,7 +654,7 @@ class AudioStreamController
 
     // Check if we have video initPTS
     // If not we need to wait for it
-    const initPTS = this.initPTS[frag.cc];
+    const initPTS = this.initPTS.get(frag.cc);
     const initSegmentData = frag.initSegment?.data;
     if (initPTS !== undefined) {
       // this.log(`Transmuxing ${sn} of [${details.startSN} ,${details.endSN}],track ${trackId}`);
@@ -1071,7 +1071,7 @@ class AudioStreamController
       fragState === FragmentState.NOT_LOADED ||
       fragState === FragmentState.PARTIAL
     ) {
-      if (track.details?.live && !this.initPTS[frag.cc]) {
+      if (track.details?.live && !this.initPTS.get(frag.cc)) {
         this.log(
           `Waiting for video PTS in continuity counter ${frag.cc} of live stream before loading audio fragment ${frag.sn} of level ${this.trackId}`,
         );

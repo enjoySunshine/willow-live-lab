@@ -690,12 +690,7 @@ export default class StreamController
       this.synchronizeToLiveEdge(newDetails);
     }
 
-    this.initPTS.some((t, i) => {
-      if (i >= newDetails.startCC) {
-        return true;
-      }
-      delete this.initPTS[i];
-    });
+    this.initPTS.removeBefore(newDetails.startCC);
 
     // trigger handler right now
     this.tick();
@@ -832,7 +827,7 @@ export default class StreamController
       this.iframesOnly,
       decryptRange,
     );
-    const initPTS = this.initPTS[frag.cc];
+    const initPTS = this.initPTS.get(frag.cc);
 
     transmuxer.push(
       payload,
@@ -1267,20 +1262,18 @@ export default class StreamController
 
       const baseTime = initSegment.initPTS as number;
       const timescale = initSegment.timescale as number;
-      const initPTS = this.initPTS[frag.cc];
+      const initPTS = this.initPTS.get(frag.cc);
       if (
         Number.isFinite(baseTime) &&
-        ((!initPTS as any) ||
-          initPTS.baseTime !== baseTime ||
-          initPTS.timescale !== timescale)
+        (initPTS?.baseTime !== baseTime || initPTS?.timescale !== timescale)
       ) {
         const trackId = initSegment.trackId as number;
-        this.initPTS[frag.cc] = {
+        this.initPTS.set(frag.cc, {
           baseTime,
           timescale,
           trackId,
-        };
-        const timestampOffsets = this.initPTS.slice(0);
+        });
+        const timestampOffsets = this.initPTS.clone();
         hls.trigger(Events.INIT_PTS_FOUND, {
           timestampOffsets,
           frag,

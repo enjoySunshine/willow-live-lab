@@ -49,7 +49,7 @@ import type { LevelKey } from '../loader/level-key';
 import type { LoadStats } from '../loader/load-stats';
 import type { AttrList } from '../utils/attr-list';
 import type { BufferInfo } from '../utils/buffer-helper';
-import type { TimestampOffset } from '../utils/timescale-conversion';
+import type { TimestampOffsets } from '../utils/timestamp-offsets';
 
 export interface MediaAttachingData {
   media: HTMLMediaElement;
@@ -389,7 +389,7 @@ export interface NonNativeTextTracksData {
 }
 
 export interface InitPTSFoundData {
-  timestampOffsets: TimestampOffset[];
+  timestampOffsets: TimestampOffsets;
   id: PlaylistLevelType;
   frag: MediaFragment;
   initPTS: number;

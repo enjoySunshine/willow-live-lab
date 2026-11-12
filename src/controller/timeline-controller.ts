@@ -10,6 +10,7 @@ import {
   createTrackNode,
   removeCuesInRange,
 } from '../utils/texttrack-utils';
+import { TimestampOffsets } from '../utils/timestamp-offsets';
 import { parseWebVTT } from '../utils/webvtt-parser';
 import type { HlsConfig } from '../config';
 import type Hls from '../hls';
@@ -33,7 +34,6 @@ import type { MediaPlaylist } from '../types/media-playlist';
 import type { VTTCCs } from '../types/vtt';
 import type { CaptionScreen } from '../utils/cea-608-parser';
 import type { CuesInterface } from '../utils/cues';
-import type { TimestampOffset } from '../utils/timescale-conversion';
 
 type TrackProperties = {
   label: string;
@@ -48,7 +48,7 @@ export class TimelineController implements ComponentAPI {
   private enabled: boolean = true;
   private Cues: CuesInterface;
   private tracks: Array<MediaPlaylist> = [];
-  private initPTS: TimestampOffset[] = [];
+  private initPTS: TimestampOffsets = new TimestampOffsets();
   private unparsedFrags: Array<FragLoadedData | FragDecryptedData> = [];
   private captionsTracks: Record<string, HTMLTrackElement> = {};
   private cueCache: Record<string, VTTCue[]> = {};
@@ -204,7 +204,7 @@ export class TimelineController implements ComponentAPI {
     if (unparsedFrags.length) {
       this.unparsedFrags = [];
       unparsedFrags.forEach((data) => {
-        if (this.initPTS[data.frag.cc]) {
+        if (this.initPTS.get(data.frag.cc)) {
           this.onFragLoaded(Events.FRAG_LOADED, data as FragLoadedData);
         } else {
           this.hls.trigger(Events.SUBTITLE_FRAG_PROCESSED, {
@@ -308,7 +308,7 @@ export class TimelineController implements ComponentAPI {
     this.captionsTracks = {};
     this.nonNativeCaptionsTracks = {};
     this.unparsedFrags = [];
-    this.initPTS = [];
+    this.initPTS.clear();
     if (this.cea608Parser1 && this.cea608Parser2) {
       this.cea608Parser1.reset();
       this.cea608Parser2.reset();
@@ -447,14 +447,14 @@ export class TimelineController implements ComponentAPI {
   private _parseIMSC1(data: FragDecryptedData | FragLoadedData) {
     const { frag, payload } = data;
     const part = 'part' in data ? data.part : null;
-    if (!this.initPTS[frag.cc]) {
+    if (!this.initPTS.get(frag.cc)) {
       this.unparsedFrags.push(data);
       return;
     }
     const hls = this.hls;
     parseIMSC1(
       payload,
-      this.initPTS[frag.cc],
+      this.initPTS.get(frag.cc)!,
       (cues) => {
         this._appendCues(cues, frag.level);
         hls.trigger(Events.SUBTITLE_FRAG_PROCESSED, {
@@ -482,8 +482,7 @@ export class TimelineController implements ComponentAPI {
     const part = 'part' in data ? data.part : null;
     // We need an initial synchronisation PTS. Store fragments as long as none has arrived
     const { initPTS, unparsedFrags } = this;
-    const maxAvCC = initPTS.length - 1;
-    if (!initPTS[frag.cc] && maxAvCC === -1) {
+    if (!initPTS.get(frag.cc) && initPTS.length === 0) {
       unparsedFrags.push(data);
       return;
     }
@@ -496,7 +495,7 @@ export class TimelineController implements ComponentAPI {
       : payload;
     parseWebVTT(
       payloadWebVTT,
-      this.initPTS[frag.cc],
+      this.initPTS.get(frag.cc),
       this.vttCCs,
       frag.cc,
       (part && !vttHeader ? part : frag).start,
@@ -537,7 +536,7 @@ export class TimelineController implements ComponentAPI {
     if (!trackPlaylistMedia.textCodec) {
       parseIMSC1(
         payload,
-        this.initPTS[frag.cc],
+        this.initPTS.get(frag.cc)!,
         () => {
           trackPlaylistMedia.textCodec = IMSC1_CODEC;
           this._parseIMSC1(data);

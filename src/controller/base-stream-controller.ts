@@ -48,6 +48,7 @@ import {
 import { estimatedAudioBitrate } from '../utils/mediacapabilities-helper';
 import { appendUint8Array } from '../utils/mp4-tools';
 import { timeRangesToString } from '../utils/time-ranges';
+import { TimestampOffsets } from '../utils/timestamp-offsets';
 import type { HlsConfig } from '../config';
 import type { FragmentTracker } from './fragment-tracker';
 import type { HlsAssetPlayer } from './interstitial-player';
@@ -72,7 +73,6 @@ import type {
 import type { Level } from '../types/level';
 import type { InitSegmentData, RemuxedTrack } from '../types/remuxer';
 import type { Bufferable, BufferInfo } from '../utils/buffer-helper';
-import type { TimestampOffset } from '../utils/timescale-conversion';
 
 type ResolveFragLoaded = (FragLoadedEndData) => void;
 type RejectFragLoaded = (LoadError) => void;
@@ -126,7 +126,7 @@ export default class BaseStreamController
   protected levelLastLoaded: Level | null = null;
   protected startFragRequested: boolean = false;
   protected decrypter: Decrypter;
-  protected initPTS: TimestampOffset[] = [];
+  protected initPTS: TimestampOffsets = new TimestampOffsets();
   protected buffering: boolean = true;
   protected loadingParts: boolean = false;
   private loopSn?: string | number;
@@ -382,7 +382,7 @@ export default class BaseStreamController
   }
 
   protected onManifestLoading() {
-    this.initPTS = [];
+    this.initPTS.clear();
     this.fragPlaying =
       this.levels =
       this.levelLastLoaded =
@@ -1389,9 +1389,7 @@ export default class BaseStreamController
     if (!buffer.length) {
       return;
     }
-    const offsetTimestamp = this.initPTS[frag.cc] as
-      | TimestampOffset
-      | undefined;
+    const offsetTimestamp = this.initPTS.get(frag.cc);
     const offset = offsetTimestamp
       ? -offsetTimestamp.baseTime / offsetTimestamp.timescale
       : undefined;

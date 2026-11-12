@@ -547,7 +547,7 @@ export class BaseStreamController extends TaskLoop implements NetworkComponentAP
     // (undocumented)
     protected initFragmentLoader: FragmentLoader;
     // (undocumented)
-    protected initPTS: TimestampOffset[];
+    protected initPTS: TimestampOffsets;
     // (undocumented)
     protected isLoopLoading(frag: Fragment, targetBufferTime: number): boolean;
     // (undocumented)
@@ -2889,7 +2889,7 @@ export interface InitPTSFoundData {
     // (undocumented)
     timescale: number;
     // (undocumented)
-    timestampOffsets: TimestampOffset[];
+    timestampOffsets: TimestampOffsets;
     // (undocumented)
     trackId: number;
 }
@@ -5261,6 +5261,26 @@ export enum TimelineOccupancy {
 export type TimestampOffset = RationalTimestamp & {
     trackId: number;
 };
+
+// Warning: (ae-missing-release-tag) "TimestampOffsets" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+export class TimestampOffsets {
+    constructor(entries?: ReadonlyArray<readonly [number, TimestampOffset]>);
+    // (undocumented)
+    clear(): void;
+    clone(): TimestampOffsets;
+    entries(): Array<[number, TimestampOffset]>;
+    // (undocumented)
+    get(cc: number): TimestampOffset | undefined;
+    // (undocumented)
+    has(cc: number): boolean;
+    get length(): number;
+    removeBefore(cc: number): void;
+    // (undocumented)
+    set(cc: number, offset: TimestampOffset): this;
+    get size(): number;
+}
 
 // Warning: (ae-missing-release-tag) "Track" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //

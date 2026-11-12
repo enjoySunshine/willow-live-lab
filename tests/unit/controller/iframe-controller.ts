@@ -8,6 +8,7 @@ import Hls from '../../../src/hls';
 import { Fragment } from '../../../src/loader/fragment';
 import { LoadStats } from '../../../src/loader/load-stats';
 import { PlaylistLevelType } from '../../../src/types/loader';
+import { TimestampOffsets } from '../../../src/utils/timestamp-offsets';
 import type { HlsConfig } from '../../../src/config';
 import type {
   HlsIFramesOnly,
@@ -20,7 +21,6 @@ import type {
   ComponentAPI,
   NetworkComponentAPI,
 } from '../../../src/types/component-api';
-import type { TimestampOffset } from '../../../src/utils/timescale-conversion';
 
 use(sinonChai);
 chaiConfig.truncateThreshold = 0;
@@ -188,20 +188,24 @@ describe('IFrameController', function () {
 
   it('passes copy of initPTS to a newly created IFramePlayer', function () {
     loadManifest(playlistWithIFrameVariants);
-    const timestamps: TimestampOffset[] = [
-      { baseTime: 900000, timescale: 90000, trackId: 0 },
-    ];
+    const timestamps = new TimestampOffsets([
+      [0, { baseTime: 900000, timescale: 90000, trackId: 0 }],
+    ]);
     hls.trigger(Events.INIT_PTS_FOUND, {
       id: PlaylistLevelType.MAIN,
       timestampOffsets: timestamps,
       frag: { cc: 0 } as any,
       initPTS: 900000,
       timescale: 90000,
-    });
+    } as any);
     const iframePlayer = iframeController.createIFramePlayer();
     const iframeStreamController = (iframePlayer as any).streamController;
     expect(iframeStreamController.initPTS).to.not.equal(timestamps);
-    expect(iframeStreamController.initPTS).to.deep.equal(timestamps);
+    expect(iframeStreamController.initPTS.get(0)).to.deep.equal({
+      baseTime: 900000,
+      timescale: 90000,
+      trackId: 0,
+    });
   });
 
   it('flushes buffer beyond the target and signals EOS before seeking on fragment buffered', function () {

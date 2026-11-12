@@ -1685,3 +1685,4 @@ export type {
   RationalTimestamp,
   TimestampOffset,
 } from './utils/timescale-conversion';
+export { TimestampOffsets } from './utils/timestamp-offsets';
